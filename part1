@@ -1,0 +1,32 @@
+import requests
+from bs4 import BeautifulSoup
+
+url = "https://www.amazon.in/s?k=bags&crid=2M096C61O4MLT&qid=1653308124&sprefix=ba%2Caps%2C283&ref=sr_pg_"
+pages_to_scrape = 20
+
+for page in range(1, pages_to_scrape + 1):
+    page_url = url + str(page)
+    response = requests.get(page_url)
+    soup = BeautifulSoup(response.content, "html.parser")
+
+    product_listings = soup.find_all("div", class_="s-result-item")
+
+    for listing in product_listings:
+        try:
+            # Extract the desired information from each product listing
+            product_url = "https://www.amazon.in" + listing.find("a", class_="a-link-normal s-no-outline")["href"]
+            product_name = listing.find("span", class_="a-size-base-plus a-color-base a-text-normal").text.strip()
+            product_price = listing.find("span", class_="a-price-whole").text.strip()
+            rating = listing.find("span", class_="a-icon-alt").text.strip()
+            num_reviews = listing.find("span", class_="a-size-base").text.strip()
+
+            # Process or store the extracted data as per your requirements
+            print("Product URL:", product_url)
+            print("Product Name:", product_name)
+            print("Product Price:", product_price)
+            print("Rating:", rating)
+            print("Number of Reviews:", num_reviews)
+            print("---")
+        except:
+            # Ignore any listings that are missing required information
+            pass
