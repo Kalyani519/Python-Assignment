@@ -1,0 +1,56 @@
+import requests
+from bs4 import BeautifulSoup
+import csv
+
+url = "https://www.amazon.in/s?k=bags&crid=2M096C61O4MLT&qid=1653308124&sprefix=ba%2Caps%2C283&ref=sr_pg_"
+pages_to_scrape = 20
+
+csv_file = open("product_data.csv", "w", newline="", encoding="utf-8")
+csv_writer = csv.writer(csv_file)
+csv_writer.writerow(["Product URL", "Product Name", "Product Price", "Rating", "Number of Reviews", "Description", "ASIN", "Product Description", "Manufacturer"])
+
+for page in range(1, pages_to_scrape + 1):
+    page_url = url + str(page)
+    response = requests.get(page_url)
+    soup = BeautifulSoup(response.content, "html.parser")
+
+    product_listings = soup.find_all("div", class_="s-result-item")
+
+    for listing in product_listings:
+        try:
+            # Extract the desired information from each product listing
+            product_url = "https://www.amazon.in" + listing.find("a", class_="a-link-normal s-no-outline")["href"]
+            product_name = listing.find("span", class_="a-size-base-plus a-color-base a-text-normal").text.strip()
+            product_price = listing.find("span", class_="a-price-whole").text.strip()
+            rating = listing.find("span", class_="a-icon-alt").text.strip()
+            num_reviews = listing.find("span", class_="a-size-base").text.strip()
+
+            # Send HTTP request to the product URL
+            response = requests.get(product_url)
+            soup = BeautifulSoup(response.content, "html.parser")
+
+            # Extract additional information from the product page
+            description = soup.find("div", id="feature-bullets").get_text(strip=True)
+            asin = soup.find("th", string="ASIN").find_next("td").text.strip()
+            product_description = soup.find("div", id="productDescription").text.strip()
+            manufacturer = soup.find("a", id="bylineInfo").text.strip()
+
+            # Write the data to the CSV file
+            csv_writer.writerow([product_url, product_name, product_price, rating, num_reviews, description, asin, product_description, manufacturer])
+
+            # Print the extracted information
+            print("Product URL:", product_url)
+            print("Product Name:", product_name)
+            print("Product Price:", product_price)
+            print("Rating:", rating)
+            print("Number of Reviews:", num_reviews)
+            print("Description:", description)
+            print("ASIN:", asin)
+            print("Product Description:", product_description)
+            print("Manufacturer:", manufacturer)
+            print("---")
+        except:
+            # Ignore any listings that are missing required information
+            pass
+
+csv_file.close()
